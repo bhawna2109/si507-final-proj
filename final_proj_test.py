@@ -16,6 +16,7 @@ class TestGoodreads(unittest.TestCase):
         self.assertEqual(g1.get_all_bookshelves(), ["read", "currently-reading", "to-read"])
     
     def testgetbookfromshelf(self):
+        #Test to make sure each element is of class Book
         g1 = proj1.Goodreads('20227451')
         for book in g1.get_all_books_in_shelf("to-read"):
             self.assertIsInstance(book, proj1.Book)

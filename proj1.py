@@ -85,7 +85,7 @@ class Goodreads:
 
     def get_all_books_in_shelf(self, shelf_name):
         url = "https://www.goodreads.com/review/list?v=2"
-        params = {'v' : 2, 'key': self.key, 'id' : self.userid, 'shelf' : shelf_name, 'sort' : "title, authot, rating, review"}
+        params = {'v' : 2, 'key': self.key, 'id' : self.userid, 'shelf' : shelf_name, 'sort' : "title, author, rating, review"}
         r = self.cache.make_request(url, params)
         books = []
         root = ET.fromstring(r)
