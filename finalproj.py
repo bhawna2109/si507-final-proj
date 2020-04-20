@@ -8,6 +8,7 @@ import json
 import requests
 import secrets # file that contains your OAuth credentials
 import xml.etree.ElementTree as ET
+import sqlite3
 
 class RequestsCache:
     def __init__(self, file_name = "cache.json"):
@@ -94,6 +95,49 @@ class Goodreads:
             books.append(Book(title))
         return books
 
+def create_db():
+    conn = sqlite3.connect('si507-final-proj.sqlite')
+    cur = conn.cursor()
+
+    drop_books_sql = 'DROP TABLE IF EXISTS "Books"'
+    
+    create_books_sql = '''
+        CREATE TABLE IF NOT EXISTS "Books" (
+            "Id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            "BookName"	TEXT NOT NULL,
+            "Author"	TEXT NOT NULL,
+            "BookDescription"	TEXT NOT NULL,
+            "Rating"	NUMERIC NOT NULL,
+            "NumberOfReviews"	INTEGER NOT NULL,
+            "GoodreadsURL"	TEXT NOT NULL,
+            "GoogleBooksId"	TEXT NOT NULL,
+            "GoogleBooksURL"	TEXT NOT NULL
+        )
+    '''
+    cur.execute(drop_books_sql)
+    cur.execute(create_books_sql)
+    conn.commit()
+    conn.close()
+
+
+def load_books(all_books):
+    insert_books_sql = '''
+        INSERT INTO Books
+        VALUES (NULL, ?, "dsad", "sada", "4.5", "6", "sfs", "Sfs", "sff")
+    '''
+    conn = sqlite3.connect('si507-final-proj.sqlite')
+    cur = conn.cursor()
+    for num in range(len(all_books)):
+        cur.execute(insert_books_sql,
+            [
+                all_books[num].name
+            ]
+        )
+    conn.commit()
+    conn.close()
+    print ("i'm here")
+
+
 if __name__ == "__main__":
     print(f'''
     Hello there!
@@ -112,6 +156,7 @@ if __name__ == "__main__":
     ''')
 
     resp = input("Enter your goodreads user-id or \"exit\" to quit: ")
+    create_db()
     if resp == "exit":
         exit()
     g = Goodreads(resp)
@@ -126,6 +171,7 @@ if __name__ == "__main__":
                 exit()
             resp = input("Invalid input :( Please enter the name of the shelf you'd like to go into, or exit to exit: ")
         books = g.get_all_books_in_shelf(resp)
+        load_books(books)
         print(f"These are all your books in the shelf \"{resp}\"  :")
         for num in range(len(books)):
             print(f"{num+1}: {books[num]}")
