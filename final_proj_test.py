@@ -14,6 +14,11 @@ class TestGoodreads(unittest.TestCase):
     def testgetbookshelves(self):
         g1 = proj1.Goodreads('20227451')
         self.assertEqual(g1.get_all_bookshelves(), ["read", "currently-reading", "to-read"])
+    
+    def testgetbookfromshelf(self):
+        g1 = proj1.Goodreads('20227451')
+        for book in g1.get_all_books_in_shelf("to-read"):
+            self.assertIsInstance(book, proj1.Book)
 
 class TestBook(unittest.TestCase):
     def teststr1(self):
