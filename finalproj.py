@@ -92,7 +92,47 @@ class Goodreads:
         for book in root.iter("book"):
             title = book.find("title").text
             books.append(Book(title))
-        for book in books:
-            print(f"{book}")
         return books
 
+if __name__ == "__main__":
+    print(f'''
+    Hello there!
+    Welcome to Bhawna Agarwal's SI507 final project.
+
+    This is a tool that'll help you finalize the next book that you should read (based on your goodreads profile and guide you with your options in acquiring that book).
+    
+    To proceed, we will need you to do the following:
+    1. Create a secrets.py so that you can access goodreads API. This should look like:
+
+        GOODREADS_API_KEY = 'deadbeef'
+        GOODREADS_API_SECRET = 'deadbeef'
+    
+    2. Keep a user-id handy that you'll be asked to input below. This is the number that shows up in the URL when you go to the My Books tab in your goodreads profile.
+
+    ''')
+
+    resp = input("Enter your goodreads user-id or \"exit\" to quit: ")
+    if resp == "exit":
+        exit()
+    g = Goodreads(resp)
+    while(resp != "exit"):
+        resp = "abcxyzjunk"
+        shelves = g.get_all_bookshelves()
+        print(f"These are all your bookshelves on your goodreads profile:")
+        print("\n".join(shelves))
+        resp = input("Enter the name of the shelf you'd like to go into, or exit to exit: ")
+        while (resp not in shelves):
+            if resp == "exit":
+                exit()
+            resp = input("Invalid input :( Please enter the name of the shelf you'd like to go into, or exit to exit: ")
+        books = g.get_all_books_in_shelf(resp)
+        print(f"These are all your books in the shelf \"{resp}\"  :")
+        for num in range(len(books)):
+            print(f"{num+1}: {books[num]}")
+        resp = input("Enter the number of the book you'd like to know more about, or exit to exit: ")
+        while(not(resp.isnumeric() and 1<=int(resp)<=len(books))):
+            if resp == "exit":
+                exit()
+            resp = input("Invalid input :( Please enter the number of the book you'd like to know more about, or exit to exit: ")
+        book_selected = books[int(resp)-1]
+        print(f"You have selected book {book_selected}")
