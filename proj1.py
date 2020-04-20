@@ -9,13 +9,22 @@ import requests
 import secrets # file that contains your OAuth credentials
 import xml.etree.ElementTree as ET
 
+class GoogleBooks:
+    def __init__(self, url = ""):
+        self.url = url
+
 class Book:
-    def __init__(self, name = "", author = ""):
+    def __init__(self, name = "", author = []):
         self.name = name
         self.author = author
+        self.googlebooks = ""
 
     def __str__(self):
-        return f"{self.name} by {self.author}"
+        return f"{self.name} by {','.join(self.author)}"
+    
+    def initialize_googlebooks_link(self):
+        url = "" #FIXME
+        #self.googlebooks = GoogleBooks(url)
 
 class Goodreads:
     def __init__(self, userid = ''):
@@ -29,13 +38,14 @@ class Goodreads:
         url = "https://www.goodreads.com/shelf/list.xml"
         params = {'key': self.key, 'user_id' : self.userid}
         r = requests.get(url = url, params = params)
-        print(r.content)
-        pass
+        root = ET.fromstring(r.content)
+        print(r.text)
+        shelves = []
+        for shelf in root.findall('user_lib'):
+            shelves.push(shelf.find("name").text)
+        print(shelves)
 
     def get_all_books_in_shelf(self, shelf_name):
         #Returns a list of object Book
         pass
 
-    def get_googlebooks_link_of_book(self, book):
-        #Access the google API and get the url link and other info
-        pass
