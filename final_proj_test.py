@@ -12,7 +12,7 @@ import goodreads as goodreads
 
 class TestGoodreads(unittest.TestCase):
     def testgetbookshelves(self):
-        g1 = goodreads.Goodreads()
+        g1 = goodreads.Goodreads('20227451')
         self.assertEqual(g1.get_all_bookshelves(), ["All", "Read", "Currently Reading", "Want to Read"])
 
 unittest.main()
