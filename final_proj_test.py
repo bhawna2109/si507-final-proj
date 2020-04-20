@@ -13,7 +13,7 @@ import proj1
 class TestGoodreads(unittest.TestCase):
     def testgetbookshelves(self):
         g1 = proj1.Goodreads('20227451')
-        self.assertEqual(g1.get_all_bookshelves(), ["All", "Read", "Currently Reading", "Want to Read"])
+        self.assertEqual(g1.get_all_bookshelves(), ["read", "currently-reading", "to-read"])
 
 class TestBook(unittest.TestCase):
     def teststr1(self):

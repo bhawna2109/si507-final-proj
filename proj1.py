@@ -39,11 +39,10 @@ class Goodreads:
         params = {'key': self.key, 'user_id' : self.userid}
         r = requests.get(url = url, params = params)
         root = ET.fromstring(r.content)
-        print(r.text)
         shelves = []
-        for shelf in root.findall('user_lib'):
-            shelves.push(shelf.find("name").text)
-        print(shelves)
+        for shelf in root.iter("user_shelf"):
+            shelves.append(shelf.find("name").text)
+        return shelves
 
     def get_all_books_in_shelf(self, shelf_name):
         #Returns a list of object Book
