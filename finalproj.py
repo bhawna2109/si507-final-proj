@@ -193,7 +193,7 @@ if __name__ == "__main__":
                 exit()
             resp = input("Invalid input :( Please enter the name of the shelf you'd like to go into, or exit to exit: ")
         books = g.get_all_books_in_shelf(resp)
-        #db.write_books_to_db(books)
+        db.write_books_to_db(books)
         print(f"These are all your books in the shelf \"{resp}\"  :")
         for num in range(len(books)):
             print(f"{num+1}: {books[num]}")
