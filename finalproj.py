@@ -53,13 +53,23 @@ class GoogleBooks:
         self.url = url
 
 class Book:
-    def __init__(self, name = "", author = []):
+    def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = ""):
         self.name = name
-        self.author = author
-        self.googlebooks = ""
+        self.authors = authors
+        self.description = description
+        self.rating = rating
+        self.goodReadsID = goodReadsID
+        self.goodReadsURL = goodReadsURL
 
     def __str__(self):
-        return f"{self.name} by {','.join(self.author)}"
+        return f"{self.name} by {','.join(self.authors)}"
+
+    def infostring(self):
+        return f'''{self.name} by {','.join(self.authors)}
+Average rating: {self.rating}/5
+GoodReads: (ID:{self.goodReadsID}) {self.goodReadsURL}
+{self.description}
+        '''
     
     def initialize_googlebooks_link(self):
         url = "" #FIXME
@@ -86,13 +96,20 @@ class Goodreads:
 
     def get_all_books_in_shelf(self, shelf_name):
         url = "https://www.goodreads.com/review/list?v=2"
-        params = {'v' : 2, 'key': self.key, 'id' : self.userid, 'shelf' : shelf_name, 'sort' : "title, author, rating, review"}
+        params = {'v' : 2, 'key': self.key, 'id' : self.userid, 'shelf' : shelf_name}
         r = self.cache.make_request(url, params)
         books = []
         root = ET.fromstring(r)
         for book in root.iter("book"):
             title = book.find("title").text
-            books.append(Book(title))
+            goodreadsid = book.find("id").text
+            goodreadsurl = book.find("link").text
+            rating = book.find("average_rating").text
+            description = book.find("description").text
+            authors = []
+            for author in book.iter("author"):
+                authors.append(author.find("name").text)
+            books.append(Book(title, authors, description, rating, goodreadsid, goodreadsurl))
         return books
 
 class BookDatabase:
@@ -113,6 +130,7 @@ class BookDatabase:
                 "BookDescription"   TEXT NOT NULL,
                 "Rating"	    NUMERIC NOT NULL,
                 "NumberOfReviews"   INTEGER NOT NULL,
+                "GoodreadsID"	    NUMERIC NOT NULL,
                 "GoodreadsURL"	    TEXT NOT NULL,
                 "GoogleBooksId"	    TEXT NOT NULL,
                 "GoogleBooksURL"    TEXT NOT NULL
@@ -128,12 +146,13 @@ class BookDatabase:
         conn = sqlite3.connect(self.db_name)
         insert_books_sql = '''
             INSERT INTO Books
-            VALUES (NULL, ?, "dsad", "sada", "4.5", "6", "sfs", "Sfs", "sff")
+            VALUES (NULL, "BookTitle", "Authors", "Description", "0", "1", "0", "goodreadsurl", "0", "googlebooksurl")
         '''
         cur = conn.cursor()
         for book in all_books:
             cur.execute(insert_books_sql,
                 [
+                    #book.name, ",".join(book.authors), book.description, book.rating, 0, book.goodReadsID, book.goodReadsURL
                     book.name
                 ]
             )
@@ -175,7 +194,7 @@ if __name__ == "__main__":
                 exit()
             resp = input("Invalid input :( Please enter the name of the shelf you'd like to go into, or exit to exit: ")
         books = g.get_all_books_in_shelf(resp)
-        db.write_books_to_db(books)
+        #db.write_books_to_db(books)
         print(f"These are all your books in the shelf \"{resp}\"  :")
         for num in range(len(books)):
             print(f"{num+1}: {books[num]}")
@@ -185,4 +204,4 @@ if __name__ == "__main__":
                 exit()
             resp = input("Invalid input :( Please enter the number of the book you'd like to know more about, or exit to exit: ")
         book_selected = books[int(resp)-1]
-        print(f"You have selected book {book_selected}")
+        print(f"{book_selected.infostring()}")
