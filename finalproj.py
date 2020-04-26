@@ -146,14 +146,13 @@ class BookDatabase:
         conn = sqlite3.connect(self.db_name)
         insert_books_sql = '''
             INSERT INTO Books
-            VALUES (NULL, "BookTitle", "Authors", "Description", "0", "1", "0", "goodreadsurl", "0", "googlebooksurl")
+            VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, "googleID", "googleURL")
         '''
         cur = conn.cursor()
         for book in all_books:
             cur.execute(insert_books_sql,
                 [
-                    #book.name, ",".join(book.authors), book.description, book.rating, 0, book.goodReadsID, book.goodReadsURL
-                    book.name
+                    book.name, ",".join(book.authors), book.description, book.rating, 0, book.goodReadsID, book.goodReadsURL
                 ]
             )
         conn.commit()
