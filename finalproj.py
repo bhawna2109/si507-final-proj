@@ -109,8 +109,13 @@ class Goodreads:
             authors = []
             for author in book.iter("author"):
                 authors.append(author.find("name").text)
+            self.get_reviews_for_book(goodreadsurl)
             books.append(Book(title, authors, description, rating, goodreadsid, goodreadsurl))
         return books
+
+    def get_reviews_for_book(self, bookurl):
+        pass
+
 
 class BookDatabase:
     def __init__(self, db_name = "si507-final-proj"):

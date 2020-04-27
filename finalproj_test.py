@@ -7,9 +7,6 @@ import unittest
 import json
 import finalproj
 
-###### Part 1 ######
-####################
-
 class TestGoodreads(unittest.TestCase):
     def testgetbookshelves(self):
         g1 = finalproj.Goodreads('20227451')
