@@ -127,11 +127,9 @@ class Goodreads:
     def get_preview_url_for_book(self, booktitle):
         url = "https://www.googleapis.com/books/v1/volumes"
         params = {'q': booktitle}
-        response = requests.get (url, params)
-        volumeID = response.json()["items"][0]["id"]
-        newurl = f"https://www.googleapis.com/books/v1/volumes/{volumeID}"
-        resp = requests.get(newurl).json()
-        readerLink = resp["accessInfo"]["webReaderLink"]
+        volumeid = json.loads(self.cache.make_request(url, params))["items"][0]["id"]
+        newurl = f"https://www.googleapis.com/books/v1/volumes/{volumeid}"
+        readerLink = json.loads(self.cache.make_request(newurl))["accessInfo"]["webReaderLink"]
         return(readerLink)
 
     def get_reviews_for_book(self, bookurl):
