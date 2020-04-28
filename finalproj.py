@@ -50,10 +50,6 @@ class RequestsCache:
         return unique_key
 
 
-class GoogleBooks:
-    def __init__(self, url = ""):
-        self.url = url
-
 class GoodreadsReview:
     def __init__(self, reviewid, reviewurl, rating, spoilerflag, snippet):
         self.reviewid = reviewid
@@ -68,7 +64,7 @@ class GoodreadsReview:
 '''
 
 class Book:
-    def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = "", reviews = []):
+    def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = "", reviews = [], previewURL = ''):
         self.name = name
         self.authors = authors
         self.description = description
@@ -76,6 +72,7 @@ class Book:
         self.goodReadsID = goodReadsID
         self.goodReadsURL = goodReadsURL
         self.reviews = reviews
+        self.previewURL = previewURL
 
     def __str__(self):
         return f"{self.name} by {','.join(self.authors)}"
@@ -85,12 +82,9 @@ class Book:
 Average rating: {self.rating}/5
 GoodReads: (ID:{self.goodReadsID}) {self.goodReadsURL}
 {self.description}
+Preview at {self.previewURL}
         '''
     
-    def initialize_googlebooks_link(self):
-        url = "" #FIXME
-        #self.googlebooks = GoogleBooks(url)
-
 class Goodreads:
     def __init__(self, userid = ''):
         self.key = secrets.GOODREADS_API_KEY
@@ -126,8 +120,19 @@ class Goodreads:
             for author in book.iter("author"):
                 authors.append(author.find("name").text)
             reviews = self.get_reviews_for_book(goodreadsurl)
-            books.append(Book(title, authors, description, rating, goodreadsid, goodreadsurl, reviews))
+            previewurl = self.get_preview_url_for_book(title)
+            books.append(Book(title, authors, description, rating, goodreadsid, goodreadsurl, reviews, previewurl))
         return books
+
+    def get_preview_url_for_book(self, booktitle):
+        url = "https://www.googleapis.com/books/v1/volumes"
+        params = {'q': booktitle}
+        response = requests.get (url, params)
+        volumeID = response.json()["items"][0]["id"]
+        newurl = f"https://www.googleapis.com/books/v1/volumes/{volumeID}"
+        resp = requests.get(newurl).json()
+        readerLink = resp["accessInfo"]["webReaderLink"]
+        return(readerLink)
 
     def get_reviews_for_book(self, bookurl):
         response = self.cache.make_request(bookurl)
@@ -168,8 +173,7 @@ class BookDatabase:
                 "NumberOfReviews"   INTEGER NOT NULL,
                 "GoodreadsID"	    NUMERIC NOT NULL PRIMARY KEY,
                 "GoodreadsURL"	    TEXT NOT NULL,
-                "GoogleBooksId"	    TEXT NOT NULL,
-                "GoogleBooksURL"    TEXT NOT NULL
+                "BookPreviewURL"    TEXT NOT NULL
             )
         '''
         drop_reviews_sql = 'DROP TABLE IF EXISTS "Reviews"'
@@ -194,7 +198,7 @@ class BookDatabase:
         conn = sqlite3.connect(self.db_name)
         insert_books_sql = '''
             INSERT INTO Books
-            VALUES (?, ?, ?, ?, ?, ?, ?, "googleID", "googleURL")
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         '''
         insert_reviews_sql = '''
             INSERT INTO Reviews
@@ -205,7 +209,7 @@ class BookDatabase:
             book = all_books[counter]
             cur.execute(insert_books_sql,
                 [
-                    book.name, ",".join(book.authors), book.description, book.rating, len(book.reviews), book.goodReadsID, book.goodReadsURL
+                    book.name, ",".join(book.authors), book.description, book.rating, len(book.reviews), book.goodReadsID, book.goodReadsURL, book.previewURL
                 ]
             )
             for review in book.reviews:
