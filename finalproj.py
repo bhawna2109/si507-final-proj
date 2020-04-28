@@ -54,8 +54,17 @@ class GoogleBooks:
         self.url = url
 
 class GoodreadsReview:
-    def __init__(self, reviewid):
+    def __init__(self, reviewid, reviewurl, rating, spoilerflag, snippet):
         self.reviewid = reviewid
+        self.url = reviewurl
+        self.rating = rating
+        self.spoilerflag = spoilerflag
+        self.snippet = snippet
+
+    def infostring(self):
+        return f''' Rated:{self.rating}/5.0, Has Spoiler: {self.spoilerflag}
+{self.snippet} (Read full review at {self.url})
+'''
 
 class Book:
     def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = "", reviews = []):
@@ -65,6 +74,7 @@ class Book:
         self.rating = rating
         self.goodReadsID = goodReadsID
         self.goodReadsURL = goodReadsURL
+        self.reviews = reviews
 
     def __str__(self):
         return f"{self.name} by {','.join(self.authors)}"
@@ -130,9 +140,14 @@ class Goodreads:
     def get_review_data_from_id(self, reviewid):
         url = 'https://www.goodreads.com/review/show.xml'
         params = {'key': self.key, 'id' : reviewid}
-        return GoodreadsReview(reviewid)
-
-
+        r = self.cache.make_request(url, params)
+        root = ET.fromstring(r)
+        for review in root.iter("review"):
+            reviewurl = 'https://www.goodreads.com/review/show/' + reviewid
+            rating = review.find("rating").text
+            spoilerflag = review.find("spoiler_flag").text
+            snippet = review.find("body").text
+        return GoodreadsReview(reviewid, reviewurl, rating, spoilerflag, snippet)
 
 class BookDatabase:
     def __init__(self, db_name = "si507-final-proj"):
@@ -143,23 +158,34 @@ class BookDatabase:
         cur = conn.cursor()
     
         drop_books_sql = 'DROP TABLE IF EXISTS "Books"'
-        
         create_books_sql = '''
             CREATE TABLE IF NOT EXISTS "Books" (
-                "Id"	            INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
                 "BookName"	    TEXT NOT NULL,
                 "Author"	    TEXT NOT NULL,
                 "BookDescription"   TEXT NOT NULL,
                 "Rating"	    NUMERIC NOT NULL,
                 "NumberOfReviews"   INTEGER NOT NULL,
-                "GoodreadsID"	    NUMERIC NOT NULL,
+                "GoodreadsID"	    NUMERIC NOT NULL PRIMARY KEY,
                 "GoodreadsURL"	    TEXT NOT NULL,
                 "GoogleBooksId"	    TEXT NOT NULL,
                 "GoogleBooksURL"    TEXT NOT NULL
             )
         '''
+        drop_reviews_sql = 'DROP TABLE IF EXISTS "Reviews"'
+        create_reviews_sql = '''
+            CREATE TABLE IF NOT EXISTS "Reviews" (
+                "ReviewId"	    NUMERIC NOT NULL PRIMARY KEY,
+                "GoodreadsBookID"   NUMERIC NOT NULL,
+                "Review Rating"	    TEXT NOT NULL,
+                "Has Spoilers"      TEXT NOT NULL,
+                "Review Snippet"    TEXT NOT NULL,
+                "Review URL"        TEXT NOT NULL
+            )
+        '''
         cur.execute(drop_books_sql)
         cur.execute(create_books_sql)
+        cur.execute(drop_reviews_sql)
+        cur.execute(create_reviews_sql)
         conn.commit()
         conn.close()
     
@@ -168,15 +194,27 @@ class BookDatabase:
         conn = sqlite3.connect(self.db_name)
         insert_books_sql = '''
             INSERT INTO Books
-            VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, "googleID", "googleURL")
+            VALUES (?, ?, ?, ?, ?, ?, ?, "googleID", "googleURL")
+        '''
+        insert_reviews_sql = '''
+            INSERT INTO Reviews
+            VALUES (?, ?, ?, ?, ?, ?)
         '''
         cur = conn.cursor()
-        for book in all_books:
+        for counter in range(len(all_books)):
+            book = all_books[counter]
             cur.execute(insert_books_sql,
                 [
-                    book.name, ",".join(book.authors), book.description, book.rating, 0, book.goodReadsID, book.goodReadsURL
+                    book.name, ",".join(book.authors), book.description, book.rating, len(book.reviews), book.goodReadsID, book.goodReadsURL
                 ]
             )
+            for review in book.reviews:
+                cur.execute(insert_reviews_sql,
+                    [
+                        review.reviewid, book.goodReadsID, review.rating, review.spoilerflag, review.snippet, review.url
+                    ]
+                )
+
         conn.commit()
         conn.close()
 
@@ -226,3 +264,5 @@ if __name__ == "__main__":
             resp = input("Invalid input :( Please enter the number of the book you'd like to know more about, or exit to exit: ")
         book_selected = books[int(resp)-1]
         print(f"{book_selected.infostring()}")
+        for review in book_selected.reviews:
+            print(f"{review.infostring()}")
