@@ -9,6 +9,7 @@ import requests
 import secrets # file that contains your OAuth credentials
 import xml.etree.ElementTree as ET
 import sqlite3
+from bs4 import BeautifulSoup
 
 class RequestsCache:
     def __init__(self, file_name = "cache.json"):
@@ -21,7 +22,7 @@ class RequestsCache:
         except:
             self.cache_dict = {}
 
-    def make_request(self, url, params):
+    def make_request(self, url, params = {}):
         key = self.construct_unique_key(url, params)
         if key in self.cache_dict:
             print("Cache Hit")
@@ -57,7 +58,7 @@ class GoodreadsReview:
         self.reviewid = reviewid
 
 class Book:
-    def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = ""):
+    def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = "", reviews = []):
         self.name = name
         self.authors = authors
         self.description = description
@@ -113,12 +114,24 @@ class Goodreads:
             authors = []
             for author in book.iter("author"):
                 authors.append(author.find("name").text)
-            self.get_reviews_for_book(goodreadsurl)
-            books.append(Book(title, authors, description, rating, goodreadsid, goodreadsurl))
+            reviews = self.get_reviews_for_book(goodreadsurl)
+            books.append(Book(title, authors, description, rating, goodreadsid, goodreadsurl, reviews))
         return books
 
     def get_reviews_for_book(self, bookurl):
-        pass
+        response = self.cache.make_request(bookurl)
+        soup = BeautifulSoup(response, 'html.parser')
+        reviews = []
+        for review in soup.find_all('div', itemprop="reviews"):
+            reviewid = review.get('id').replace('review_', '')
+            reviews.append(self.get_review_data_from_id(reviewid))
+        return reviews
+
+    def get_review_data_from_id(self, reviewid):
+        url = 'https://www.goodreads.com/review/show.xml'
+        params = {'key': self.key, 'id' : reviewid}
+        return GoodreadsReview(reviewid)
+
 
 
 class BookDatabase:
