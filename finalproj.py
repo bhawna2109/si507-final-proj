@@ -52,6 +52,10 @@ class GoogleBooks:
     def __init__(self, url = ""):
         self.url = url
 
+class GoodreadsReview:
+    def __init__(self, reviewid):
+        self.reviewid = reviewid
+
 class Book:
     def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = ""):
         self.name = name

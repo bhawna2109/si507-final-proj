@@ -17,6 +17,22 @@ class TestGoodreads(unittest.TestCase):
         g1 = finalproj.Goodreads('20227451')
         for book in g1.get_all_books_in_shelf("to-read"):
             self.assertIsInstance(book, finalproj.Book)
+    
+    def testgetbookfromshelf(self):
+        #Test to make sure each element is of class Book
+        g1 = finalproj.Goodreads('20227451')
+        for book in g1.get_all_books_in_shelf("to-read"):
+            self.assertIsInstance(book, finalproj.Book)
+    
+    def testgetreview(self):
+        #Test to make sure each element is of class Book
+        g1 = finalproj.Goodreads('20227451')
+        for book in g1.get_all_books_in_shelf("to-read"):
+            reviews = g1.get_reviews_for_book(book.goodReadsURL)
+            self.assertIsInstance(reviews, list)
+            for review in reviews:
+                self.assertIsInstance(review, finalproj.GoodreadsReview)
+
 
 class TestBook(unittest.TestCase):
     def teststr1(self):
