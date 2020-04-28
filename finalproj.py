@@ -176,7 +176,7 @@ class BookDatabase:
         create_reviews_sql = '''
             CREATE TABLE IF NOT EXISTS "Reviews" (
                 "ReviewId"	    NUMERIC NOT NULL PRIMARY KEY,
-                "GoodreadsBookID"   NUMERIC NOT NULL,
+                "GoodreadsID"   NUMERIC NOT NULL,
                 "Review Rating"	    TEXT NOT NULL,
                 "Has Spoilers"      TEXT NOT NULL,
                 "Review Snippet"    TEXT NOT NULL,
