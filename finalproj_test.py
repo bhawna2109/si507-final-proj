@@ -30,9 +30,12 @@ class TestGoodreads(unittest.TestCase):
         for book in g1.get_all_books_in_shelf("to-read"):
             reviews = g1.get_reviews_for_book(book.goodReadsURL)
             self.assertIsInstance(reviews, list)
-            for review in reviews:
-                self.assertIsInstance(review, finalproj.GoodreadsReview)
+            self.assertIsInstance(reviews[0], finalproj.GoodreadsReview)
 
+    def testgetpreviewURL(self):
+        #Test to make sure each element is of class Book
+        g1 = finalproj.Goodreads('20227451')
+        self.assertEqual(g1.get_preview_url_for_book("Homegoing"), "http://play.google.com/books/reader?id=fh-eCgAAQBAJ&hl=&printsec=frontcover&source=gbs_api")
 
 class TestBook(unittest.TestCase):
     def teststr1(self):
