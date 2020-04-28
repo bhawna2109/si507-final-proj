@@ -120,7 +120,7 @@ class Goodreads:
             goodreadsid = book.find("id").text
             goodreadsurl = book.find("link").text
             rating = book.find("average_rating").text
-            description = book.find("description").text
+            description = BeautifulSoup(book.find("description").text).get_text().strip()
             authors = []
             for author in book.iter("author"):
                 authors.append(author.find("name").text)
@@ -153,7 +153,7 @@ class BookDatabase:
     def __init__(self, db_name = "si507-final-proj"):
         self.db_name = db_name + '.sqlite'
 
-    def create_db(self):
+    def init_db(self):
         conn = sqlite3.connect(self.db_name)
         cur = conn.cursor()
     
@@ -189,7 +189,6 @@ class BookDatabase:
         conn.commit()
         conn.close()
     
-    
     def write_books_to_db(self, all_books):
         conn = sqlite3.connect(self.db_name)
         insert_books_sql = '''
@@ -218,6 +217,24 @@ class BookDatabase:
         conn.commit()
         conn.close()
 
+    def execute_query(self, query):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
+        result = cursor.execute(query).fetchall()
+        connection.close()
+        print(result)
+
+    def sql_analysis(self):
+        print(f"You can enter some queries here and see what result you get:")
+        resp = "junk"
+        while(resp != "exit"):
+            resp = input("Enter an SQL query or \"exit\" to quit: ")
+            if resp == "exit":
+                return
+            self.execute_query(resp)
+
+
+
 
 if __name__ == "__main__":
     print(f'''
@@ -225,23 +242,28 @@ if __name__ == "__main__":
     Welcome to Bhawna Agarwal's SI507 final project.
 
     This is a tool that'll help you finalize the next book that you should read (based on your goodreads profile and guide you with your options in acquiring that book).
+
+    You can use the interface below to do 2 things. You can either populate your database from the books you have in your goodreads profile. Or you can look up the existing database for help.
     
     To proceed, we will need you to do the following:
     1. Create a secrets.py so that you can access goodreads API. This should look like:
-
         GOODREADS_API_KEY = 'deadbeef'
         GOODREADS_API_SECRET = 'deadbeef'
-    
     2. Keep a user-id handy that you'll be asked to input below. This is the number that shows up in the URL when you go to the My Books tab in your goodreads profile.
 
     ''')
 
-    resp = input("Enter your goodreads user-id or \"exit\" to quit: ")
-    if resp == "exit":
-        exit()
-    g = Goodreads(resp)
     db = BookDatabase()
-    db.create_db()
+    resp = "junk"
+    while(resp != "exit"):
+        print("Enter your goodreads user-id to populate data in the database, or \"sql\" to access the exiting database (only valid) or \"exit\" to quit. Keep in mind that entering a goodreads id clears out the current database.")
+        resp = input("Make your selection: ")
+        if resp == "exit":
+            exit()
+        if resp == "sql":
+            db.sql_analysis()
+    g = Goodreads(resp)
+    db.init_db()
     while(resp != "exit"):
         resp = "abcxyzjunk"
         shelves = g.get_all_bookshelves()
@@ -254,7 +276,7 @@ if __name__ == "__main__":
             resp = input("Invalid input :( Please enter the name of the shelf you'd like to go into, or exit to exit: ")
         books = g.get_all_books_in_shelf(resp)
         db.write_books_to_db(books)
-        print(f"These are all your books in the shelf \"{resp}\"  :")
+        print(f"These are all your books in the shelf \"{resp}\" The data from these books has been added to SQL database:")
         for num in range(len(books)):
             print(f"{num+1}: {books[num]}")
         resp = input("Enter the number of the book you'd like to know more about, or exit to exit: ")
