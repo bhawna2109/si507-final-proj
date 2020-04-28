@@ -62,7 +62,7 @@ class GoodreadsReview:
         self.snippet = snippet
 
     def infostring(self):
-        return f''' Rated:{self.rating}/5.0, Has Spoiler: {self.spoilerflag}
+        return f'''Rated:{self.rating}/5.0, Has Spoiler: {self.spoilerflag}
 {self.snippet} (Read full review at {self.url})
 '''
 
@@ -146,7 +146,7 @@ class Goodreads:
             reviewurl = 'https://www.goodreads.com/review/show/' + reviewid
             rating = review.find("rating").text
             spoilerflag = review.find("spoiler_flag").text
-            snippet = review.find("body").text
+            snippet = BeautifulSoup(review.find("body").text).get_text().strip()
         return GoodreadsReview(reviewid, reviewurl, rating, spoilerflag, snippet)
 
 class BookDatabase:
