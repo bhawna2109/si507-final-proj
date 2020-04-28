@@ -28,6 +28,7 @@ class RequestsCache:
             print("Cache Hit")
             return self.cache_dict[key].encode()
         else:
+            print("Cache Miss. Please wait while your records are being fetched...")
             r = requests.get(url = url, params = params)
             self.cache_dict[key] = r.content.decode()
             self.save_cache()
@@ -120,7 +121,7 @@ class Goodreads:
             goodreadsid = book.find("id").text
             goodreadsurl = book.find("link").text
             rating = book.find("average_rating").text
-            description = BeautifulSoup(book.find("description").text).get_text().strip()
+            description = BeautifulSoup(book.find("description").text, 'html.parser').get_text().strip()
             authors = []
             for author in book.iter("author"):
                 authors.append(author.find("name").text)
@@ -146,7 +147,7 @@ class Goodreads:
             reviewurl = 'https://www.goodreads.com/review/show/' + reviewid
             rating = review.find("rating").text
             spoilerflag = review.find("spoiler_flag").text
-            snippet = BeautifulSoup(review.find("body").text).get_text().strip()
+            snippet = BeautifulSoup(review.find("body").text, 'html.parser').get_text().strip()
         return GoodreadsReview(reviewid, reviewurl, rating, spoilerflag, snippet)
 
 class BookDatabase:
@@ -262,6 +263,8 @@ if __name__ == "__main__":
             exit()
         if resp == "sql":
             db.sql_analysis()
+        if resp.isnumeric():
+            break
     g = Goodreads(resp)
     db.init_db()
     while(resp != "exit"):
