@@ -13,6 +13,10 @@ from bs4 import BeautifulSoup
 from flask import Flask, render_template, request
 
 class RequestsCache:
+    # Class for maintaining a cache.
+    # This class intends for the the "user" of the cache
+    # to only use the make_request function.
+    # Rest everything is taken by the class itself
     def __init__(self, file_name = "cache.json"):
         self.file_name = file_name
         try:
@@ -52,6 +56,10 @@ class RequestsCache:
 
 
 class GoodreadsReview:
+    # An object of type GoodreadsReview is used to pass along
+    # all the relevant information regarding a particular review
+    # like the review id on goodreads, the review's rating,
+    # Whether the review contains spoilers or not
     def __init__(self, reviewid, reviewurl, rating, spoilerflag, snippet):
         self.reviewid = reviewid
         self.url = reviewurl
@@ -65,6 +73,10 @@ class GoodreadsReview:
 '''
 
 class Book:
+    # An object of type Book holds all the relevant information regarding
+    # a particular book.
+    # It knows the title, the authors, description, average rating etc.
+    # and has list of reviews to go with it as well
     def __init__(self, name = "", authors = [], description = "", rating = 0, goodReadsID = 0, goodReadsURL = "", reviews = [], previewURL = ''):
         self.name = name
         self.authors = authors
@@ -87,6 +99,11 @@ Preview at {self.previewURL}
         '''
     
 class Goodreads:
+    # The main class of this project.
+    # This makes all the API calls to the goodreads as well as
+    # scrapes the book page to get review ids etc.
+    # This object instantiates a cache within it for all the
+    # requests call for speed up.
     def __init__(self, userid = ''):
         self.key = secrets.GOODREADS_API_KEY
         self.secret = secrets.GOODREADS_API_SECRET
@@ -95,10 +112,13 @@ class Goodreads:
         self.cache = RequestsCache()
 
     def setuserid(self, userid = ''):
+        #Set a goodreads userid for this object.
+        #That userid will then be used to look up all the information
         self.userid = userid
 
     def get_all_bookshelves(self):
-        #Returns a list of all the bookshelves of the current user
+        #Returns a list of all the bookshelves of the current user-id
+        #Returns the names of all shelves on GoodReads
         url = "https://www.goodreads.com/shelf/list.xml"
         params = {'key': self.key, 'user_id' : self.userid}
         r = self.cache.make_request(url, params)
@@ -109,6 +129,12 @@ class Goodreads:
         return shelves
 
     def get_all_books_in_shelf(self, shelf_name):
+        # Returns a list of all books (of type Book) that
+        # are present in the user's specified shelf.
+        # This function makes a call to the goodreads API to get all books.
+        # It then populates a list with books recieved.
+        # In addition it calls other functions of this object which get some reviews 
+        # of the book and gets a preview url from google API
         url = "https://www.goodreads.com/review/list?v=2"
         params = {'v' : 2, 'key': self.key, 'id' : self.userid, 'shelf' : shelf_name}
         r = self.cache.make_request(url, params)
@@ -129,6 +155,10 @@ class Goodreads:
         return books
 
     def get_preview_url_for_book(self, booktitle):
+        # For a given book title, this function looks up google apis
+        # and returns a url for previewing the book.
+        # This helps someone get a feel of the book on whether they want
+        # to get it or not.
         url = "https://www.googleapis.com/books/v1/volumes"
         params = {'q': booktitle}
         volumeid = json.loads(self.cache.make_request(url, params))["items"][0]["id"]
@@ -137,6 +167,12 @@ class Goodreads:
         return(readerLink)
 
     def get_reviews_for_book(self, bookurl):
+        #For a given goodreads book url. This function scrapes the webpage
+        #to get all the review ids on that page. This was required because the 
+        #goodreads api does not natively support returning all the reviews
+        #associated with a book.
+        #After scraping, another function is called to get the relevant information
+        #from that review. This function returns a list of object GoodreadsReview
         response = self.cache.make_request(bookurl)
         soup = BeautifulSoup(response, 'html.parser')
         reviews = []
@@ -146,6 +182,9 @@ class Goodreads:
         return reviews
 
     def get_review_data_from_id(self, reviewid):
+        #This function looks up the goodreds API for the specified review id
+        #and populates information like the review rating, spoiler flag, full 
+        #review url and snippet of the first ~300 characters of the review.
         url = 'https://www.goodreads.com/review/show.xml'
         params = {'key': self.key, 'id' : reviewid}
         r = self.cache.make_request(url, params)
@@ -158,6 +197,10 @@ class Goodreads:
         return GoodreadsReview(reviewid, reviewurl, rating, spoilerflag, snippet)
 
 class BookDatabase:
+    #Maintains all the database handling for this project.
+    #Creates the database and the tables "Books" and "Reviews"
+    #and populates that from the information collected from the GoodReads objects
+    #This class also supports running SQL queries on the database for presentation purposes
     def __init__(self, db_name = "si507-final-proj"):
         self.db_name = db_name + '.sqlite'
 
