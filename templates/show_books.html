@@ -29,11 +29,11 @@
                   <th>Book name</th>
                   <th>Author</th>
                   <th>Avg. rating</th>
-                  <th># 5 stars</th>
-                  <th># 4 stars</th>
-                  <th># 3 stars</th>
-                  <th># 2 stars</th>
-                  <th># 1 star</th>
+                  <th># 5 star reviews</th>
+                  <th># 4 star reviews</th>
+                  <th># 3 star reviews</th>
+                  <th># 2 star reviews</th>
+                  <th># 1 star reviews</th>
                   <th>Book Preview URL</th>
             </tr>
             {% for row in results %}
@@ -46,11 +46,31 @@
                   <td>{{row[5]}}</td>
                   <td>{{row[6]}}</td>
                   <td>{{row[7]}}</td>
-                  <td>{{row[8]}}</td>
+                  <td><a href={{row[8]}} target="_blank">{{row[0]}}</a></td>
             </tr>
             {% endfor %}
-
       </table>
+
+      <form action="/show_reviews" method="POST" target="_blank">
+            <p>
+                  Show all reviews for:
+                  <select name="book">
+                  {% for row in results %}
+                        <option value="{{row[0]}}">{{row[0]}}</option>
+                  {% endfor %}
+                  </select>
+                  having
+                  <select name="rating">
+                        <option value=5>5 stars</option>
+                        <option value=4>4 stars</option>
+                        <option value=3>3 stars</option>
+                        <option value=2>2 stars</option>
+                        <option value=1>1 star</option>
+                  </select>
+            </p>
+
+            <input type="submit" value="Open reviews in a new tab"/>
+      </form>
 
 </body>
 </html>

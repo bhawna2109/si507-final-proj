@@ -276,11 +276,22 @@ class BookDatabase:
         query = '''
         SELECT Books.BookName, Author, Rating, SUM("Review Rating" LIKE "5") AS FIveStar, SUM("Review Rating" LIKE "4") AS FourStar, SUM("Review Rating" LIKE "3") AS ThreeStar, SUM("Review Rating" LIKE "2") AS TwoStar, SUM("Review Rating" LIKE "1") AS OneStar, Books.BookPreviewURL, Books.GoodreadsID
         FROM Reviews
-        JOIN Books
-        WHERE Books.GoodreadsID = Reviews.GoodreadsID
+            JOIN Books
+                ON Books.GoodreadsID = Reviews.GoodreadsID
         GROUP BY Books.BookName
         '''
         return self.execute_query(query)
+
+    def reviews_query(self, book, rating):
+        query = f'''
+        SELECT Reviews."Review Snippet", Reviews."Has Spoilers", Reviews."Review URL"
+        FROM Reviews
+	    JOIN Books
+		    ON Books.GoodreadsID = Reviews.GoodreadsID
+        WHERE Reviews."Review Rating" = "{rating}" AND Books.BookName = "{book}"
+        '''
+        return self.execute_query(query)
+
 
 app = Flask(__name__)
 
@@ -310,6 +321,14 @@ def handle_form_shelves():
     db.write_books_to_db(books)
     return render_template('show_books.html',
         shelf = resp, results = db.table_query()
+    )
+
+@app.route('/show_reviews', methods=['POST'])
+def show_reviews():
+    book = request.form["book"]
+    rating = request.form["rating"]
+    return render_template('show_reviews.html',
+        book = book, rating = rating, reviews = db.reviews_query(book, rating)
     )
 
 
