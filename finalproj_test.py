@@ -42,8 +42,4 @@ class TestBook(unittest.TestCase):
         b1 = finalproj.Book("Sapiens", ["Yuval Noah Harari"])
         self.assertEqual(f"{b1}" , "Sapiens by Yuval Noah Harari")
         
-
-class TestGoogleBooks(unittest.TestCase):
-    pass
-
 unittest.main()
