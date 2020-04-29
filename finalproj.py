@@ -3,7 +3,6 @@
 ##### Uniqname: bhawna              #####
 #########################################
 
-from requests_oauthlib import OAuth1
 import json
 import requests
 import secrets # file that contains your OAuth credentials
@@ -108,7 +107,6 @@ class Goodreads:
         self.key = secrets.GOODREADS_API_KEY
         self.secret = secrets.GOODREADS_API_SECRET
         self.userid = userid
-        self.auth = OAuth1(self.key, self.secret)
         self.cache = RequestsCache()
 
     def setuserid(self, userid = ''):
