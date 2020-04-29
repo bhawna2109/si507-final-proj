@@ -140,10 +140,15 @@ class Goodreads:
         root = ET.fromstring(r)
         for book in root.iter("book"):
             title = book.find("title").text
+            print(f"Processing {title}")
             goodreadsid = book.find("id").text
             goodreadsurl = book.find("link").text
             rating = book.find("average_rating").text
-            description = BeautifulSoup(book.find("description").text, 'html.parser').get_text().strip()
+            description = book.find("description").text
+            if description:
+                description = BeautifulSoup(description, 'html.parser').get_text().strip()
+            else:
+                description = ""
             authors = []
             for author in book.iter("author"):
                 authors.append(author.find("name").text)
@@ -176,7 +181,9 @@ class Goodreads:
         reviews = []
         for review in soup.find_all('div', itemprop="reviews"):
             reviewid = review.get('id').replace('review_', '')
-            reviews.append(self.get_review_data_from_id(reviewid))
+            ret = self.get_review_data_from_id(reviewid)
+            if ret is not None:
+                reviews.append(ret)
         return reviews
 
     def get_review_data_from_id(self, reviewid):
@@ -192,7 +199,8 @@ class Goodreads:
             rating = review.find("rating").text
             spoilerflag = review.find("spoiler_flag").text
             snippet = BeautifulSoup(review.find("body").text, 'html.parser').get_text().strip()
-        return GoodreadsReview(reviewid, reviewurl, rating, spoilerflag, snippet)
+            return GoodreadsReview(reviewid, reviewurl, rating, spoilerflag, snippet)
+        return None
 
 class BookDatabase:
     #Maintains all the database handling for this project.
