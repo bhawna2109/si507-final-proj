@@ -10,6 +10,7 @@ import secrets # file that contains your OAuth credentials
 import xml.etree.ElementTree as ET
 import sqlite3
 from bs4 import BeautifulSoup
+from flask import Flask, render_template, request
 
 class RequestsCache:
     def __init__(self, file_name = "cache.json"):
@@ -92,6 +93,9 @@ class Goodreads:
         self.userid = userid
         self.auth = OAuth1(self.key, self.secret)
         self.cache = RequestsCache()
+
+    def setuserid(self, userid = ''):
+        self.userid = userid
 
     def get_all_bookshelves(self):
         #Returns a list of all the bookshelves of the current user
@@ -227,71 +231,49 @@ class BookDatabase:
         cursor = connection.cursor()
         result = cursor.execute(query).fetchall()
         connection.close()
-        print(result)
+        return result
 
-    def sql_analysis(self):
-        print(f"You can enter some queries here and see what result you get:")
-        resp = "junk"
-        while(resp != "exit"):
-            resp = input("Enter an SQL query or \"exit\" to quit: ")
-            if resp == "exit":
-                return
-            self.execute_query(resp)
+    def table_query(self):
+        query = '''
+        SELECT Books.BookName, Author, Rating, SUM("Review Rating" LIKE "5") AS FIveStar, SUM("Review Rating" LIKE "4") AS FourStar, SUM("Review Rating" LIKE "3") AS ThreeStar, SUM("Review Rating" LIKE "2") AS TwoStar, SUM("Review Rating" LIKE "1") AS OneStar, Books.BookPreviewURL, Books.GoodreadsID
+        FROM Reviews
+        JOIN Books
+        WHERE Books.GoodreadsID = Reviews.GoodreadsID
+        GROUP BY Books.BookName
+        '''
+        return self.execute_query(query)
 
+app = Flask(__name__)
 
+g = Goodreads()
+db = BookDatabase()
+
+@app.route('/')
+def index():
+    return render_template('index.html') # just the static HTML
+
+@app.route('/handle_form', methods=['POST'])
+def handle_form():
+
+    GoodreadsID = request.form["GoodreadsID"]
+    g.setuserid(GoodreadsID)
+    db.init_db()
+    shelves = g.get_all_bookshelves()
+
+    return render_template('bookshelf_choose.html', 
+        shelves_list=shelves
+    )
+
+@app.route('/handle_form_shelves', methods=['POST'])
+def handle_form_shelves():
+    resp = request.form["shelves"]
+    books = g.get_all_books_in_shelf(resp)
+    db.write_books_to_db(books)
+    return render_template('show_books.html',
+        shelf = resp, results = db.table_query()
+    )
 
 
 if __name__ == "__main__":
-    print(f'''
-    Hello there!
-    Welcome to Bhawna Agarwal's SI507 final project.
-
-    This is a tool that'll help you finalize the next book that you should read (based on your goodreads profile and guide you with your options in acquiring that book).
-
-    You can use the interface below to do 2 things. You can either populate your database from the books you have in your goodreads profile. Or you can look up the existing database for help.
-    
-    To proceed, we will need you to do the following:
-    1. Create a secrets.py so that you can access goodreads API. This should look like:
-        GOODREADS_API_KEY = 'deadbeef'
-        GOODREADS_API_SECRET = 'deadbeef'
-    2. Keep a user-id handy that you'll be asked to input below. This is the number that shows up in the URL when you go to the My Books tab in your goodreads profile.
-
-    ''')
-
-    db = BookDatabase()
-    resp = "junk"
-    while(resp != "exit"):
-        print("Enter your goodreads user-id to populate data in the database, or \"sql\" to access the exiting database (only valid) or \"exit\" to quit. Keep in mind that entering a goodreads id clears out the current database.")
-        resp = input("Make your selection: ")
-        if resp == "exit":
-            exit()
-        if resp == "sql":
-            db.sql_analysis()
-        if resp.isnumeric():
-            break
-    g = Goodreads(resp)
-    db.init_db()
-    while(resp != "exit"):
-        resp = "abcxyzjunk"
-        shelves = g.get_all_bookshelves()
-        print(f"These are all your bookshelves on your goodreads profile:")
-        print("\n".join(shelves))
-        resp = input("Enter the name of the shelf you'd like to go into, or exit to exit: ")
-        while (resp not in shelves):
-            if resp == "exit":
-                exit()
-            resp = input("Invalid input :( Please enter the name of the shelf you'd like to go into, or exit to exit: ")
-        books = g.get_all_books_in_shelf(resp)
-        db.write_books_to_db(books)
-        print(f"These are all your books in the shelf \"{resp}\" The data from these books has been added to SQL database:")
-        for num in range(len(books)):
-            print(f"{num+1}: {books[num]}")
-        resp = input("Enter the number of the book you'd like to know more about, or exit to exit: ")
-        while(not(resp.isnumeric() and 1<=int(resp)<=len(books))):
-            if resp == "exit":
-                exit()
-            resp = input("Invalid input :( Please enter the number of the book you'd like to know more about, or exit to exit: ")
-        book_selected = books[int(resp)-1]
-        print(f"{book_selected.infostring()}")
-        for review in book_selected.reviews:
-            print(f"{review.infostring()}")
+    print('starting Flask app', app.name)  
+    app.run(debug=True)
